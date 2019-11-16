@@ -77,6 +77,25 @@ void readFromImage(image *input, char *fileName) {
     fclose(file);
 }
 
+void writeToImage(image *img, char *fileName) {
+    FILE *file = fopen(fileName, "wb");
+    int i;
+    if (img->ct == RGB) {
+        fprintf(file, "P6\n%d %d\n%d\n",
+            img->width, img->height, img->maxval);
+        for (i = 0; i < img->height; i++) {
+            fwrite(img->picC[i], 1, sizeof(pixelRGB) * img->width, file);
+        }
+    } else {
+        fprintf(file, "P5\n%d %d\n%d\n",
+            img->width, img->height, img->maxval);
+        for (i = 0; i < img->height; i++) {
+            fwrite(img->picGS[i], 1, sizeof(pixelGS) * img->width, file);
+        }
+    }
+    fclose(file);
+}
+
 void riibUp(image *input, image *output) {
     int i, j;
     int x, y;
@@ -97,10 +116,10 @@ void riibUp(image *input, image *output) {
                 x_diff = xr - x;
                 y_diff = yr - y;
 
-                TL = input->picGS[yr    ][xr    ];
-                TR = input->picGS[yr    ][xr + 1];
-                BL = input->picGS[yr + 1][xr    ];
-                BR = input->picGS[yr + 1][xr + 1];
+                TL = input->picGS[y    ][x    ];
+                TR = input->picGS[y    ][x + 1];
+                BL = input->picGS[y + 1][x    ];
+                BR = input->picGS[y + 1][x + 1];
 
                 output->picGS[i][j] = (pixelGS)(
                     (1.0f - x_diff) * (1.0f - y_diff) * (float)BL
@@ -121,10 +140,10 @@ void riibUp(image *input, image *output) {
                 x_diff = xr - x;
                 y_diff = yr - y;
 
-                TL = input->picC[yr    ][xr    ];
-                TR = input->picC[yr    ][xr + 1];
-                BL = input->picC[yr + 1][xr    ];
-                BR = input->picC[yr + 1][xr + 1];
+                TL = input->picC[y    ][x    ];
+                TR = input->picC[y    ][x + 1];
+                BL = input->picC[y + 1][x    ];
+                BR = input->picC[y + 1][x + 1];
 
                 output->picC[i][j].R = (unsigned char)(
                     (1.0f - x_diff) * (1.0f - y_diff) * (float)BL.R + x_diff * (1.0f - y_diff) * (float)BR.R
@@ -220,14 +239,8 @@ int main(int argc, char *argv[]) {
         riibDown(&input, &output);
     }
 
-
-    FILE *file = fopen(argv[2], "wb");
+    writeToImage(&output, argv[2]);
     if (input.ct == RGB) {
-        fprintf(file, "P6\n%d %d\n%d\n",
-            output.width, output.height, output.maxval);
-        for (i = 0; i < output.height; i++) {
-            fwrite(output.picC[i], 1, sizeof(pixelRGB) * output.width, file);
-        }
         for (i = 0; i < input.height; i++) {
             free(input.picC[i]);
         }
@@ -237,11 +250,6 @@ int main(int argc, char *argv[]) {
         }
         free(output.picC);
     } else {
-        fprintf(file, "P5\n%d %d\n%d\n",
-            output.width, output.height, output.maxval);
-        for (i = 0; i < output.height; i++) {
-            fwrite(output.picGS[i], 1, sizeof(pixelGS) * output.width, file);
-        }
         for (i = 0; i < input.height; i++) {
             free(input.picGS[i]);
         }
@@ -251,6 +259,5 @@ int main(int argc, char *argv[]) {
         }
         free(output.picGS);
     }
-    fclose(file);
     return 0;
 }
