@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #define RGB 1
 #define GS 2
@@ -244,6 +245,13 @@ int main(int argc, char *argv[]) {
     image input;
     image output;
     int i, j, k;
+
+    float time = 0;
+    clock_t start;
+    clock_t end;
+
+    start = clock();
+
     readFromImage(&input, argv[1]);
     output.ct = input.ct;
 
@@ -281,5 +289,10 @@ int main(int argc, char *argv[]) {
         }
         free(output.picGS);
     }
+
+    end = clock();
+    time = (float)(end - start);
+    printf("%f seconds\n", time/CLOCKS_PER_SEC);
+
     return 0;
 }
