@@ -1,0 +1,3 @@
+serial/*/*.pgm
+serial/*/*.pnm
+serial/*/*[^.c]
