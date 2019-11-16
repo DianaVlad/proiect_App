@@ -97,10 +97,10 @@ void riibUp(image *input, image *output) {
                 x_diff = xr - x;
                 y_diff = yr - y;
 
-                TL = input->picGS[yr    ][xr    ];
-                TR = input->picGS[yr    ][xr + 1];
-                BL = input->picGS[yr + 1][xr    ];
-                BR = input->picGS[yr + 1][xr + 1];
+                TL = input->picGS[y    ][x    ];
+                TR = input->picGS[y    ][x + 1];
+                BL = input->picGS[y + 1][x    ];
+                BR = input->picGS[y + 1][x + 1];
 
                 output->picGS[i][j] = (pixelGS)(
                     (1.0f - x_diff) * (1.0f - y_diff) * (float)BL
@@ -121,10 +121,10 @@ void riibUp(image *input, image *output) {
                 x_diff = xr - x;
                 y_diff = yr - y;
 
-                TL = input->picC[yr    ][xr    ];
-                TR = input->picC[yr    ][xr + 1];
-                BL = input->picC[yr + 1][xr    ];
-                BR = input->picC[yr + 1][xr + 1];
+                TL = input->picC[y    ][x    ];
+                TR = input->picC[y    ][x + 1];
+                BL = input->picC[y + 1][x    ];
+                BR = input->picC[y + 1][x + 1];
 
                 output->picC[i][j].R = (unsigned char)(
                     (1.0f - x_diff) * (1.0f - y_diff) * (float)BL.R + x_diff * (1.0f - y_diff) * (float)BR.R
