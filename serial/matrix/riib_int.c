@@ -52,7 +52,7 @@ void allocPicture(image *img) {
 }
 
 void readFromImage(image *input, char *fileName) {
-    int i, j;
+    int i;
     FILE *file = fopen(fileName, "rb");
     char typeC[3];
     fscanf(file, "%s\n%d %d\n%d\n",
@@ -79,8 +79,8 @@ void readFromImage(image *input, char *fileName) {
 }
 
 void writeToImage(image *img, char *fileName) {
-    FILE *file = fopen(fileName, "wb");
     int i;
+    FILE *file = fopen(fileName, "wb");
     if (img->ct == RGB) {
         fprintf(file, "P6\n%d %d\n%d\n",
             img->width, img->height, img->maxval);
@@ -244,8 +244,7 @@ void riibDown(image *input, image *output) {
 int main(int argc, char *argv[]) {
     image input;
     image output;
-    int i, j, k;
-
+    int i;
     float time = 0;
     clock_t start;
     clock_t end;

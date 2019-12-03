@@ -24,7 +24,6 @@ typedef struct {
 }image;
 
 void allocPicture(image *img) {
-    int i;
     if (img->ct == RGB) {
         img->picC = malloc(sizeof(pixelRGB *) * img->height);
         if (img->picC == NULL) {
@@ -51,7 +50,6 @@ void allocPicture(image *img) {
 }
 
 void readFromImage(image *input, char *fileName) {
-    int i, j;
     FILE *file = fopen(fileName, "rb");
     char typeC[3];
     fscanf(file, "%s\n%d %d\n%d\n",
@@ -79,7 +77,6 @@ void readFromImage(image *input, char *fileName) {
 
 void writeToImage(image *img, char *fileName) {
     FILE *file = fopen(fileName, "wb");
-    int i;
     if (img->ct == RGB) {
         fprintf(file, "P6\n%d %d\n%d\n",
             img->width, img->height, img->maxval);
