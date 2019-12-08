@@ -92,108 +92,172 @@ void riibUp(image *input, image *output) {
 
     int indexInputBase, indexInput, indexOutput = 0;
 
-    pixelRGB TL, TR, BL, BR;
 
     omp_set_num_threads(num_threads);
 
-    #pragma omp parallel for \
-    shared(input, output,  x_ratio, y_ratio, num_threads) \
-    private(i, j, xr, yr, x, y, indexInput, indexOutput, indexInputBase, TL, TR, BL, BR, x_diff, y_diff, one_min_y_diff, one_min_x_diff) \
-    schedule(dynamic, CHUNK)
-    for (i = 0; i < output->height; ++i) {
-        yr = (int) (y >> 16);
-        y_diff = y - ((long)yr << 16);
-        one_min_y_diff = 65536 - y_diff;
-        x = 0;
-        indexInputBase = yr * input->width;
-        for (j = 0; j < output->width; ++j) {
-            xr = (int) (x >> 16);
-            x_diff = x - ((long)xr << 16);
-            one_min_x_diff = 65536 - x_diff;
+    if (output->ct == GS) {
+        pixelGS TL, TR, BL, BR;
 
-            indexInput = indexInputBase + xr;
+        #pragma omp parallel for \
+        shared(input, output,  x_ratio, y_ratio, num_threads) \
+        private(i, j, xr, yr, x, y, indexInput, indexOutput, indexInputBase, TL, TR, BL, BR, x_diff, y_diff, one_min_y_diff, one_min_x_diff) \
+        schedule(dynamic, CHUNK)
+        for (i = 0; i < output->height; ++i) {
+            yr = (int) (y >> 16);
+            y_diff = y - ((long)yr << 16);
+            one_min_y_diff = 65536 - y_diff;
+            x = 0;
+            indexInputBase = yr * input->width;
+            y = y_ratio * i;
+            indexOutput = i * output->width;
+            for (j = 0; j < output->width; ++j) {
+                xr = (int) (x >> 16);
+                x_diff = x - ((long)xr << 16);
+                one_min_x_diff = 65536 - x_diff;
 
-            TL = input->picC[indexInput];
-            TR = input->picC[indexInput + 1];
-            BL = input->picC[indexInput + input->width];
-            BR = input->picC[indexInput + input->width + 1];
+                indexInput = indexInputBase + xr;
 
-            output->picC[indexOutput].R = (unsigned char)((
-                one_min_x_diff * one_min_y_diff * BL.R + x_diff * one_min_y_diff * BR.R
-                + y_diff * one_min_x_diff * TL.R + x_diff * y_diff * TR.R
-                ) >> 32);
+                TL = input->picGS[indexInput];
+                TR = input->picGS[indexInput + 1];
+                BL = input->picGS[indexInput + input->width];
+                BR = input->picGS[indexInput + input->width + 1];
 
-            output->picC[indexOutput].G = (unsigned char)((
-                one_min_x_diff * one_min_y_diff * BL.G + x_diff * one_min_y_diff * BR.G
-                + y_diff * one_min_x_diff * TL.G + x_diff * y_diff * TR.G
-                ) >> 32);
+                output->picGS[indexOutput] = (pixelGS)((
+                    one_min_x_diff * one_min_y_diff * (long)BL
+                    + x_diff * one_min_y_diff * (long)BR
+                    + y_diff * one_min_x_diff * (long)TL
+                    + x_diff * y_diff * (long)TR) >> 32);
 
-            output->picC[indexOutput].B = (unsigned char)((
-                one_min_x_diff * one_min_y_diff * BL.B + x_diff * one_min_y_diff * BR.B
-                + y_diff * one_min_x_diff * TL.B + x_diff * y_diff * TR.B
-                ) >> 32);
-            x += x_ratio;
-            //printf("%d\n", indexOutput);
-            ++indexOutput;
+                x += x_ratio;
+                ++indexOutput;
+            }
         }
-        y += y_ratio;
+    } else if (output->ct == RGB) {
+        pixelRGB TL, TR, BL, BR;
+        #pragma omp parallel for \
+        shared(input, output,  x_ratio, y_ratio, num_threads) \
+        private(i, j, xr, yr, x, y, indexInput, indexOutput, indexInputBase, TL, TR, BL, BR, x_diff, y_diff, one_min_y_diff, one_min_x_diff) \
+        schedule(dynamic, CHUNK)
+        for (i = 0; i < output->height; ++i) {
+            yr = (int) (y >> 16);
+            y_diff = y - ((long)yr << 16);
+            one_min_y_diff = 65536 - y_diff;
+            x = 0;
+            indexInputBase = yr * input->width;
+            y = y_ratio * i;
+            indexOutput = i * output->width;
+            for (j = 0; j < output->width; ++j) {
+                xr = (int) (x >> 16);
+                x_diff = x - ((long)xr << 16);
+                one_min_x_diff = 65536 - x_diff;
+
+                indexInput = indexInputBase + xr;
+
+                TL = input->picC[indexInput];
+                TR = input->picC[indexInput + 1];
+                BL = input->picC[indexInput + input->width];
+                BR = input->picC[indexInput + input->width + 1];
+
+                output->picC[indexOutput].R = (unsigned char)((
+                    one_min_x_diff * one_min_y_diff * BL.R + x_diff * one_min_y_diff * BR.R
+                    + y_diff * one_min_x_diff * TL.R + x_diff * y_diff * TR.R
+                    ) >> 32);
+
+                output->picC[indexOutput].G = (unsigned char)((
+                    one_min_x_diff * one_min_y_diff * BL.G + x_diff * one_min_y_diff * BR.G
+                    + y_diff * one_min_x_diff * TL.G + x_diff * y_diff * TR.G
+                    ) >> 32);
+
+                output->picC[indexOutput].B = (unsigned char)((
+                    one_min_x_diff * one_min_y_diff * BL.B + x_diff * one_min_y_diff * BR.B
+                    + y_diff * one_min_x_diff * TL.B + x_diff * y_diff * TR.B
+                    ) >> 32);
+                x += x_ratio;
+                ++indexOutput;
+            }
+        }
     }
-    
 }
 
-void riibDown() {
+void riibDown(image *input, image *output) {
     int i, j;
 
     long x, y;
-    int y_ratio = (((long)input.height - 1) << 16) / output.height;
+    int y_ratio = (((long)input->height - 1) << 16) / output->height;
     y = y_ratio >> 1;
-    int x_ratio = (((long)input.width - 1) << 16) / output.width;
+    int x_ratio = (((long)input->width - 1) << 16) / output->width;
     int xr, yr;
 
     int indexInput, indexInputBase, indexOutput = 0;
-    pixelRGB TL, TR, BL, BR;
-    omp_set_num_threads(num_threads);
-   
-    #pragma omp parallel for \
-    shared(input, output,  x_ratio, y_ratio) \
-    private(i, j, xr, yr, x, y, indexInput, indexOutput, indexInputBase, TL, TR, BL, BR)
-    for (i = 0; i < output.height; i++) {
-        x = x_ratio >> 1;
-        yr = y >> 16;
-        indexInputBase = yr * input.width;
-        for (j = 0; j < output.width; j++) {
-            xr = x >> 16;
 
-            indexInput = indexInputBase + xr;
+    if (output->ct == GS) {
+        #pragma omp parallel for \
+        shared(input, output,  x_ratio, y_ratio, num_threads) \
+        private(i, j, xr, yr, x, y, indexInput, indexOutput, indexInputBase) \
+        schedule(dynamic, CHUNK)
+        for (i = 0; i < output->height; ++i) {
+            x = x_ratio >> 1;
+            yr = y >> 16;
+            indexInputBase = yr * input->width;
+            y = y_ratio * i;
+            indexOutput = i * output->width;
+            for (j = 0; j < output->width; ++j) {
+                xr = x >> 16;
 
-            TL = input.picC[indexInput];
-            TR = input.picC[indexInput + 1];
-            BL = input.picC[indexInput + input.width];
-            BR = input.picC[indexInput + input.width + 1];
+                indexInput = indexInputBase + xr;
 
-            output.picC[indexOutput].R = (unsigned char)(((int)TL.R
-                + (int)TR.R
-                + (int)BL.R
-                + (int)BR.R) >> 2);
+                output->picGS[indexOutput] = (pixelGS)(((int)input->picGS[indexInput]
+                    + (int)input->picGS[indexInput + input->width]
+                    + (int)input->picGS[indexInput + 1]
+                    + (int)input->picGS[indexInput + input->width + 1]) >> 2);
 
-            output.picC[indexOutput].G = (unsigned char)(((int)TL.G
-                + (int)TR.G
-                + (int)BL.G
-                + (int)BR.G) >> 2);
-
-            output.picC[indexOutput].B = (unsigned char)(((int)TL.B
-                + (int)TR.B
-                + (int)BL.B
-                + (int)BR.B) >> 2);
-            printf("%d\n", indexOutput);
-            x += x_ratio;
-            ++indexOutput;
+                x += x_ratio;
+                ++indexOutput;
+            }
         }
-        y += y_ratio;
-    }
-    
-}
+    } else if (output->ct == RGB) {
+        pixelRGB TL, TR, BL, BR;
+        #pragma omp parallel for \
+        shared(input, output,  x_ratio, y_ratio, num_threads) \
+        private(i, j, xr, yr, x, y, indexInput, indexOutput, indexInputBase, TL, TR, BL, BR) \
+        schedule(dynamic, CHUNK)
+        for (i = 0; i < output->height; ++i) {
+            x = x_ratio >> 1;
+            yr = y >> 16;
+            indexInputBase = yr * input->width;
+            y = y_ratio * i;
+            indexOutput = i * output->width;
+            for (j = 0; j < output->width; ++j) {
+                xr = x >> 16;
 
+                indexInput = indexInputBase + xr;
+
+                TL = input->picC[indexInput];
+                TR = input->picC[indexInput + 1];
+                BL = input->picC[indexInput + input->width];
+                BR = input->picC[indexInput + input->width + 1];
+
+                output->picC[indexOutput].R = (unsigned char)(((int)TL.R
+                    + (int)TR.R
+                    + (int)BL.R
+                    + (int)BR.R) >> 2);
+
+                output->picC[indexOutput].G = (unsigned char)(((int)TL.G
+                    + (int)TR.G
+                    + (int)BL.G
+                    + (int)BR.G) >> 2);
+
+                output->picC[indexOutput].B = (unsigned char)(((int)TL.B
+                    + (int)TR.B
+                    + (int)BL.B
+                    + (int)BR.B) >> 2);
+
+                x += x_ratio;
+                ++indexOutput;
+            }
+        }
+    }
+}
 
 int main(int argc, char *argv[]) {
     float time = 0;
@@ -222,7 +286,7 @@ int main(int argc, char *argv[]) {
         riibUp(&input, &output);
     } else if (scale < 1 && scale > 0) {
         allocPicture(&output);
-        riibDown();
+        riibDown(&input, &output);
     }
 
     writeToImage(&output, argv[2]);
