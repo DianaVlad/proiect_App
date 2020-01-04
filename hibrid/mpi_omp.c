@@ -28,7 +28,7 @@ typedef struct {
     pixelGS* picGS;
 }image;
 
-int threadCount;
+int threadCount, num_threads;
 int CHUNK = 10;
 
 void allocPicture(image *img) {
@@ -114,13 +114,14 @@ void riibUp(image *input, image *output) {
 
     int indexInputBase, indexInput, indexOutput = 0;
 
-    omp_set_num_threads(threadCount);
+    //omp_set_num_threads(num_threads);
 
     if (output->ct == GS) {
         pixelGS TL, TR, BL, BR;
         
         #pragma omp parallel for \
         private(i, j, xr, yr, x, y, indexInput, indexOutput, indexInputBase, TL, TR, BL, BR, x_diff, y_diff, one_min_y_diff, one_min_x_diff) \
+        num_threads(num_threads) \
         schedule(dynamic, CHUNK)
         for (i = 0; i < output->height; ++i) {
             
@@ -158,6 +159,7 @@ void riibUp(image *input, image *output) {
         pixelRGB TL, TR, BL, BR;
         #pragma omp parallel for \
         private(i, j, xr, yr, x, y, indexInput, indexOutput, indexInputBase, TL, TR, BL, BR, x_diff, y_diff, one_min_y_diff, one_min_x_diff) \
+        num_threads(num_threads) \
         schedule(dynamic, CHUNK)
         for (i = 0; i < output->height; ++i) {
             yr = (int) (y >> 16);
@@ -213,82 +215,83 @@ void riibDown(image *input, image *output) {
 
     int indexInput, indexInputBase, indexOutput = 0;
 
-    omp_set_num_threads(threadCount);
+    //omp_set_num_threads(num_threads);
 
-    #pragma omp parallel
-    {
-        if (output->ct == GS) {
-            #pragma omp for \
-            private(i, j, xr, yr, x, y, indexInput, indexOutput, indexInputBase) \
-            schedule(dynamic, CHUNK)
-            for (i = 0; i < output->height; ++i) {
-                x = x_ratio >> 1;
-                yr = y >> 16;
-                indexInputBase = yr * input->width;
-                y = y_ratio * i;
-                indexOutput = i * output->width;
-                for (j = 0; j < output->width; ++j) {
-                    xr = x >> 16;
+    if (output->ct == GS) {
+        #pragma omp parallel for \
+        private(i, j, xr, yr, x, y, indexInput, indexOutput, indexInputBase) \
+        num_threads(num_threads) \
+        schedule(dynamic, CHUNK)
+        for (i = 0; i < output->height; ++i) {
+            x = x_ratio >> 1;
+            yr = y >> 16;
+            indexInputBase = yr * input->width;
+            y = y_ratio * i;
+            indexOutput = i * output->width;
+            for (j = 0; j < output->width; ++j) {
+                xr = x >> 16;
 
-                    indexInput = indexInputBase + xr;
+                indexInput = indexInputBase + xr;
 
-                    output->picGS[indexOutput] = (pixelGS)(((int)input->picGS[indexInput]
-                        + (int)input->picGS[indexInput + input->width]
-                        + (int)input->picGS[indexInput + 1]
-                        + (int)input->picGS[indexInput + input->width + 1]) >> 2);
+                output->picGS[indexOutput] = (pixelGS)(((int)input->picGS[indexInput]
+                    + (int)input->picGS[indexInput + input->width]
+                    + (int)input->picGS[indexInput + 1]
+                    + (int)input->picGS[indexInput + input->width + 1]) >> 2);
 
-                    x += x_ratio;
-                    ++indexOutput;
-                }
+                x += x_ratio;
+                ++indexOutput;
             }
-        } else if (output->ct == RGB) {
-            pixelRGB TL, TR, BL, BR;
-            #pragma omp for \
-            private(i, j, xr, yr, x, y, indexInput, indexOutput, indexInputBase, TL, TR, BL, BR) \
-            schedule(dynamic, CHUNK)
-            for (i = 0; i < output->height; ++i) {
-                x = x_ratio >> 1;
-                yr = y >> 16;
-                indexInputBase = yr * input->width;
-                y = y_ratio * i;
-                indexOutput = i * output->width;
-                for (j = 0; j < output->width; ++j) {
-                    xr = x >> 16;
+        }
+    } else if (output->ct == RGB) {
+        pixelRGB TL, TR, BL, BR;
+        #pragma omp parallel for \
+        private(i, j, xr, yr, x, y, indexInput, indexOutput, indexInputBase, TL, TR, BL, BR) \
+        num_threads(num_threads) \
+        schedule(dynamic, CHUNK)
+        for (i = 0; i < output->height; ++i) {
+            x = x_ratio >> 1;
+            yr = y >> 16;
+            indexInputBase = yr * input->width;
+            y = y_ratio * i;
+            indexOutput = i * output->width;
+            for (j = 0; j < output->width; ++j) {
+                xr = x >> 16;
 
-                    indexInput = indexInputBase + xr;
+                indexInput = indexInputBase + xr;
 
-                    TL = input->picC[indexInput];
-                    TR = input->picC[indexInput + 1];
-                    BL = input->picC[indexInput + input->width];
-                    BR = input->picC[indexInput + input->width + 1];
+                TL = input->picC[indexInput];
+                TR = input->picC[indexInput + 1];
+                BL = input->picC[indexInput + input->width];
+                BR = input->picC[indexInput + input->width + 1];
 
-                    output->picC[indexOutput].R = (unsigned char)(((int)TL.R
-                        + (int)TR.R
-                        + (int)BL.R
-                        + (int)BR.R) >> 2);
+                output->picC[indexOutput].R = (unsigned char)(((int)TL.R
+                    + (int)TR.R
+                    + (int)BL.R
+                    + (int)BR.R) >> 2);
 
-                    output->picC[indexOutput].G = (unsigned char)(((int)TL.G
-                        + (int)TR.G
-                        + (int)BL.G
-                        + (int)BR.G) >> 2);
+                output->picC[indexOutput].G = (unsigned char)(((int)TL.G
+                    + (int)TR.G
+                    + (int)BL.G
+                    + (int)BR.G) >> 2);
 
-                    output->picC[indexOutput].B = (unsigned char)(((int)TL.B
-                        + (int)TR.B
-                        + (int)BL.B
-                        + (int)BR.B) >> 2);
+                output->picC[indexOutput].B = (unsigned char)(((int)TL.B
+                    + (int)TR.B
+                    + (int)BL.B
+                    + (int)BR.B) >> 2);
 
-                    x += x_ratio;
-                    ++indexOutput;
-                }
+                x += x_ratio;
+                ++indexOutput;
             }
         }
     }
+    
 }
 
 /*
  * argv[1] - input
  * argv[2] - output
  * argv[3] - scale
+ * argv[4] - omp threads number
  */
 
 int main(int argc, char *argv[]) {
@@ -316,6 +319,7 @@ int main(int argc, char *argv[]) {
     int partialInputLen;
 
     float scale = atof(argv[3]);
+    num_threads = atoi(argv[4]);
 
     float xRatio, yRatio;
 
