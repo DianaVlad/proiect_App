@@ -345,7 +345,7 @@ int main(int argc, char *argv[]) {
         output.height = (int)newHeight;
         output.maxval = input.maxval;
         output.ct = input.ct;
-        CHUNK = output.height/ threadCount;
+        CHUNK = output.height / threadCount;
         allocPicture(&output);
         if (threadCount == 1) {
             // run serial
@@ -560,6 +560,7 @@ int main(int argc, char *argv[]) {
      * scale down/up the partialInput and store it in partialOutput 
      */
     if (threadCount != 1) {
+        CHUNK = output.height / threadCount;
         if (scale > 1) {
             riibUp(&partialInput, &partialOutput);
         } else {
