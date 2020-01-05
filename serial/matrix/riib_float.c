@@ -24,6 +24,7 @@ typedef struct {
 }image;
 
 void allocPicture(image *img) {
+    int i;
     if (img->ct == RGB) {
         img->picC = malloc(sizeof(pixelRGB *) * img->height);
         if (img->picC == NULL) {
@@ -50,6 +51,7 @@ void allocPicture(image *img) {
 }
 
 void readFromImage(image *input, char *fileName) {
+    int i;
     FILE *file = fopen(fileName, "rb");
     char typeC[3];
     fscanf(file, "%s\n%d %d\n%d\n",
@@ -76,6 +78,7 @@ void readFromImage(image *input, char *fileName) {
 }
 
 void writeToImage(image *img, char *fileName) {
+    int i;
     FILE *file = fopen(fileName, "wb");
     if (img->ct == RGB) {
         fprintf(file, "P6\n%d %d\n%d\n",
@@ -98,7 +101,7 @@ void riibUp(image *input, image *output) {
     int x, y;
     float y_ratio = ((float)(input->height - 1)) / output->height;
     float x_ratio = ((float)(input->width - 1)) / output->width;
-    float x_diff, y_diff, ya, yb;
+    float x_diff, y_diff;
     float xr, yr;
 
     if (output->ct == GS) {
@@ -218,7 +221,7 @@ void riibDown(image *input, image *output) {
 int main(int argc, char *argv[]) {
     image input;
     image output;
-    int i, j, k;
+    int i;
     readFromImage(&input, argv[1]);
     output.ct = input.ct;
 
