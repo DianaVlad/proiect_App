@@ -354,6 +354,11 @@ int main(int argc, char *argv[]) {
             } else {
                 riibDown(&input, &output);
             }
+            writeToImage(&output, argv[2]);
+            destroyPicture(&input);
+            destroyPicture(&output);
+            MPI_Finalize();
+            return 0;
         } else {
             /*
              * compute output width & height
